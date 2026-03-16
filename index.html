@@ -21,29 +21,29 @@
 
     <style>
         body {
-            background-color: #050505;
+            background-color: #000;
             color: white;
             min-height: 100vh;
             overflow-x: hidden;
             padding-bottom: 150px;
             position: relative;
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
-        /* Fondo Estático Real (Sin Zoom) */
-        #bg-image-layer {
+        /* FONDO TOTALMENTE ESTÁTICO (MÉTODO INMUNE A ZOOM) */
+        #bg-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            filter: brightness(0.4);
-            z-index: -2;
+            z-index: -3;
             pointer-events: none;
-            transform: translateZ(0); /* Previene parpadeos en Chrome/Safari */
+        }
+        #bg-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.35);
         }
 
         /* Cuadrícula Industrial */
@@ -52,38 +52,60 @@
             inset: 0;
             background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
             background-size: 30px 30px;
-            z-index: -1;
+            z-index: -2;
             pointer-events: none;
         }
 
-        /* Tarjetas con Legibilidad Mejorada (Menos transparentes) */
-        .glass-card {
-            background: rgba(15, 15, 15, 0.85); /* Fondo oscuro sólido para lectura clara */
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        /* TARJETAS: ESTÉTICA PLATEADA Y ANIMACIÓN 3D */
+        .perspective-container {
+            perspective: 1000px;
         }
 
-        .metal-border {
-            border-top-color: rgba(255, 255, 255, 0.15);
-            border-left-color: rgba(255, 255, 255, 0.15);
-            border-bottom-color: rgba(0, 0, 0, 0.5);
-            border-right-color: rgba(0, 0, 0, 0.5);
+        .glass-card {
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            transform-style: preserve-3d;
+        }
+
+        /* El característico borde plateado del Preview */
+        .glass-card::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(135deg, #444, #eee, #444);
+            z-index: -1;
+            border-radius: inherit;
+            opacity: 0.3;
+            transition: opacity 0.5s;
+        }
+
+        .perspective-container:hover .glass-card {
+            transform: rotateY(7deg) rotateX(2deg) translateZ(20px);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .perspective-container:hover .glass-card::before {
+            opacity: 0.6;
         }
 
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .animate-fade-in {
-            animation: fadeInUp 0.6s ease-out forwards;
+            animation: fadeInUp 0.8s ease-out forwards;
         }
     </style>
 </head>
 <body>
     <!-- Capas de Fondo -->
-    <div id="bg-image-layer"></div>
+    <div id="bg-container">
+        <img id="main-bg-img" src="https://i.ibb.co/m5LPqZfV/Screenshot-20260312-132436-Google-1-1.jpg" alt="background">
+    </div>
     <div class="industrial-grid-overlay"></div>
 
     <div id="root"></div>
@@ -105,7 +127,7 @@
                         const cachedImage = localStorage.getItem(`lubriluk_img_${storageKey}`);
                         if (cachedImage) {
                             setSrc(cachedImage);
-                            if (isBackground) document.getElementById('bg-image-layer').style.backgroundImage = `url(${cachedImage})`;
+                            if (isBackground) document.getElementById('main-bg-img').src = cachedImage;
                             return;
                         }
                         const response = await fetch(url);
@@ -115,12 +137,11 @@
                             const base64String = reader.result;
                             try { localStorage.setItem(`lubriluk_img_${storageKey}`, base64String); } catch (e) {}
                             setSrc(base64String);
-                            if (isBackground) document.getElementById('bg-image-layer').style.backgroundImage = `url(${base64String})`;
+                            if (isBackground) document.getElementById('main-bg-img').src = base64String;
                         };
                         reader.readAsDataURL(blob);
                     } catch (error) {
                         setSrc(url);
-                        if (isBackground) document.getElementById('bg-image-layer').style.backgroundImage = `url(${url})`;
                     }
                 };
                 loadPersistentImage();
@@ -131,13 +152,13 @@
         const CategoryCard = ({ title, description, image, storageKey, delay, objectFit = 'cover' }) => {
             const persistentImage = useImagePersistence(image, storageKey);
             return (
-                <div className="group relative animate-fade-in opacity-0" style={{ animationDelay: `${delay}s`, animationFillMode: 'forwards' }}>
-                    <div className="glass-card metal-border rounded-xl p-6 h-full flex flex-col overflow-hidden transition-all duration-300 hover:border-white/30">
-                        <div className="mb-6 overflow-hidden rounded-lg bg-black/60 flex items-center justify-center border border-white/5">
+                <div className="perspective-container animate-fade-in opacity-0" style={{ animationDelay: `${delay}s`, animationFillMode: 'forwards' }}>
+                    <div className="glass-card rounded-xl p-6 h-full flex flex-col overflow-hidden">
+                        <div className="mb-6 overflow-hidden rounded-lg bg-black/60 flex items-center justify-center border border-white/5 shadow-inner">
                             <img 
                                 src={persistentImage} 
                                 alt={title} 
-                                className={`w-full h-48 ${objectFit === 'contain' ? 'object-contain p-2' : 'object-cover'} transition-transform duration-500 group-hover:scale-105`}
+                                className={`w-full h-48 ${objectFit === 'contain' ? 'object-contain p-2' : 'object-cover'} transition-transform duration-700 group-hover:scale-110`}
                                 referrerPolicy="no-referrer"
                             />
                         </div>
@@ -163,9 +184,9 @@
             return (
                 <div className="min-h-screen relative">
                     <header className="w-full pt-0 pb-0 flex flex-col items-center">
-                        <div className="w-full h-64 glass-card metal-border flex items-center justify-center relative overflow-hidden group border-x-0">
+                        <div className="w-full h-64 glass-card flex items-center justify-center relative overflow-hidden border-x-0">
                             <div className="flex flex-col items-center z-10 gap-6 animate-fade-in">
-                                <img src={heroBanner} alt="Lubriluk Banner" className="h-44 md:h-56 object-contain rounded-xl shadow-lg" referrerPolicy="no-referrer" />
+                                <img src={heroBanner} alt="Lubriluk Banner" className="h-44 md:h-56 object-contain rounded-xl shadow-2xl" referrerPolicy="no-referrer" />
                                 <p className="font-semibold italic uppercase tracking-widest" style={{ color: '#a63d17', textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                                     Creciendo con experiencia
                                 </p>
@@ -186,7 +207,7 @@
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                             <CategoryCard title="Lubricantes" description="Aceites sintéticos, minerales y aditivos de marcas líderes como Shell, Motul, Castrol y Gulf." image="https://i.ibb.co/FkrjTv6P/26946-1.webp" storageKey="prod_lub" delay={0.1} />
                             <CategoryCard title="Cubiertas" description="Cámaras, cubiertas y tacos de goma para motos de alta calidad." image="https://i.ibb.co/d4rLdgLh/D-NQ-NP-979994-MLA84406763780-052025-O.png" storageKey="prod_cub" delay={0.2} objectFit="contain" />
                             <CategoryCard title="Repuestos" description="Filtros, juegos de transmisión, zapatas de freno, baterías y más." image="https://i.ibb.co/dwv55wm3/D-NQ-NP-838704-MLA73109317958-122023-O.png" storageKey="prod_rep" delay={0.3} objectFit="contain" />
@@ -194,8 +215,8 @@
                         </div>
 
                         <section className="mt-40 mb-20 flex flex-col items-center text-center animate-fade-in">
-                            <div className="max-w-[850px]">
-                                <h2 className="text-3xl md:text-4xl font-semibold mb-8 italic" style={{ color: '#a63d17' }}>Experiencia que nos Respalda</h2>
+                            <div className="max-w-[850px] glass-card p-10 rounded-3xl">
+                                <h2 className="text-3xl md:text-4xl font-semibold mb-8 italic uppercase tracking-tighter" style={{ color: '#a63d17' }}>Experiencia que nos Respalda</h2>
                                 <p className="text-white text-lg md:text-xl leading-relaxed font-light">
                                     Lubriluk nace de la visión de sus fundadores, quienes sumamos años de trayectoria real en el rubro de los motores. Tras una vida de experiencia en el sector, decidimos fundar esta nueva empresa para ofrecer un servicio superador en la venta de lubricantes premium (Shell, Motul, Gulf) y repuestos especializados: desde juegos de transmisión y rulemanes hasta cubiertas y componentes de frenado. Conocemos lo que vendemos porque lo vivimos desde adentro.
                                 </p>
@@ -203,17 +224,17 @@
                         </section>
 
                         <section className="mt-20 mb-32 flex flex-col items-center gap-8 px-4 animate-fade-in">
-                            <a href="https://www.google.com/maps/search/?api=1&query=Crucero+Gral.+Belgrano+475,+Resistencia,+Chaco" target="_blank" rel="noopener noreferrer" className="w-full max-w-2xl py-4 px-8 rounded-lg text-center font-medium text-white shadow-xl transition-transform hover:scale-[1.01]" style={{ backgroundColor: '#a63d17' }}>
-                                Nuestra Dirección: Crucero Gral. Belgrano 475, Resistencia
+                            <a href="https://www.google.com/maps/search/?api=1&query=Crucero+Gral.+Belgrano+475,+Resistencia,+Chaco" target="_blank" rel="noopener noreferrer" className="w-full max-w-2xl py-5 px-8 rounded-xl text-center font-bold text-white shadow-2xl transition-transform hover:scale-[1.02]" style={{ backgroundColor: '#a63d17' }}>
+                                NUESTRA DIRECCIÓN: CRUCERO GRAL. BELGRANO 475, RESISTENCIA
                             </a>
                             <div className="text-center text-white text-lg">
                                 También podés contactarnos por correo: {' '}
-                                <a href="mailto:contacto.lubriluk@gmail.com" className="font-bold border-b border-[#a63d17]" style={{ color: '#a63d17' }}>contacto.lubriluk@gmail.com</a>
+                                <a href="mailto:contacto.lubriluk@gmail.com" className="font-bold border-b-2 border-[#a63d17]" style={{ color: '#a63d17' }}>contacto.lubriluk@gmail.com</a>
                             </div>
                         </section>
                     </main>
 
-                    <footer className="mt-32 py-16 px-6 border-t border-white/5 bg-black/60">
+                    <footer className="mt-32 py-16 px-6 border-t border-white/5 bg-black/80">
                         <div className="max-w-7xl mx-auto flex flex-col items-center text-center gap-10">
                             <img src={signature} alt="Lubriluk Signature" className="max-h-[50px] object-contain opacity-80" referrerPolicy="no-referrer" />
                             <p className="text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">© 2026 LUBRILUK, TODOS LOS DERECHOS RESERVADOS</p>
@@ -236,7 +257,7 @@
                         href="https://wa.me/5493624104432?text=Hola,%20vengo%20del%20sitio%20web%20oficial.%20Quería%20realizar%20una%20consulta%20por..." 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="fixed bottom-8 right-8 z-50 px-8 py-4 rounded-full font-bold text-white shadow-2xl transition-all hover:scale-105 active:scale-95 text-center" 
+                        className="fixed bottom-8 right-8 z-50 px-8 py-4 rounded-full font-bold text-white shadow-2xl transition-all hover:scale-110 active:scale-95 text-center" 
                         style={{ backgroundColor: '#a63d17' }}
                     >
                         Escribinos por WhatsApp
