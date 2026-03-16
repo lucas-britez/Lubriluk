@@ -20,20 +20,42 @@
     </script>
 
     <style>
-        /* Industrial/Metallic Grid Background */
-        .industrial-grid {
-            background-color: #050505;
-            background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
+        body {
+            background-color: black;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 150px;
+            position: relative;
         }
 
-        /* Glassmorphism & Metal Effects */
+        /* Capa de Fondo con Imagen (Controlada por JS para persistencia) */
+        #bg-image-layer {
+            position: fixed;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            filter: brightness(0.45);
+            z-index: -2;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Cuadrícula Industrial (Encima de la imagen) */
+        .industrial-grid-overlay {
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Efectos de Vidrio y Metal */
         .glass-card {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
         }
 
         .metal-border {
@@ -43,7 +65,6 @@
             border-right-color: rgba(0, 0, 0, 0.4);
         }
 
-        /* Custom Animations */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
@@ -52,17 +73,13 @@
         .animate-fade-in {
             animation: fadeInUp 0.8s ease forwards;
         }
-
-        body {
-            background-color: black;
-            color: white;
-            min-height: screen;
-            overflow-x: hidden;
-            padding-bottom: 150px;
-        }
     </style>
 </head>
 <body>
+    <!-- Capas de Fondo -->
+    <div id="bg-image-layer"></div>
+    <div class="industrial-grid-overlay"></div>
+
     <div id="root"></div>
 
     <!-- React & Babel CDNs -->
@@ -74,15 +91,19 @@
         const { useState, useEffect } = React;
 
         // --- Hook de Persistencia de Imágenes ---
-        const useImagePersistence = (url, storageKey) => {
+        const useImagePersistence = (url, storageKey, isBackground = false) => {
             const [src, setSrc] = useState(url);
 
             useEffect(() => {
                 const loadPersistentImage = async () => {
                     try {
                         const cachedImage = localStorage.getItem(`lubriluk_img_${storageKey}`);
+                        
                         if (cachedImage) {
                             setSrc(cachedImage);
+                            if (isBackground) {
+                                document.getElementById('bg-image-layer').style.backgroundImage = `url(${cachedImage})`;
+                            }
                             return;
                         }
 
@@ -97,29 +118,31 @@
                                 console.warn(`LocalStorage lleno para ${storageKey}`);
                             }
                             setSrc(base64String);
+                            if (isBackground) {
+                                document.getElementById('bg-image-layer').style.backgroundImage = `url(${base64String})`;
+                            }
                         };
                         reader.readAsDataURL(blob);
                     } catch (error) {
                         setSrc(url);
+                        if (isBackground) {
+                            document.getElementById('bg-image-layer').style.backgroundImage = `url(${url})`;
+                        }
                     }
                 };
                 loadPersistentImage();
-            }, [url, storageKey]);
+            }, [url, storageKey, isBackground]);
 
             return src;
         };
 
-        // --- Componente de Tarjeta de Categoría ---
         const CategoryCard = ({ title, description, image, storageKey, delay, objectFit = 'cover' }) => {
             const persistentImage = useImagePersistence(image, storageKey);
 
             return (
-                <div 
-                    className="group relative animate-fade-in opacity-0" 
-                    style={{ animationDelay: `${delay}s`, animationFillMode: 'forwards' }}
-                >
+                <div className="group relative animate-fade-in opacity-0" style={{ animationDelay: `${delay}s`, animationFillMode: 'forwards' }}>
                     <div className="glass-card metal-border rounded-xl p-6 h-full flex flex-col overflow-hidden transition-all duration-500 hover:border-white/30">
-                        <div className="mb-6 overflow-hidden rounded-[8px] bg-black/40 flex items-center justify-center shadow-lg">
+                        <div className="mb-6 overflow-hidden rounded-[8px] bg-black/40 flex items-center justify-center shadow-inner">
                             <img 
                                 src={persistentImage} 
                                 alt={title} 
@@ -128,20 +151,17 @@
                             />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold mb-3 italic text-white group-hover:text-[#a63d17] transition-colors uppercase tracking-tight">
-                                {title}
-                            </h3>
-                            <p className="text-gray-400 text-sm leading-relaxed">
-                                {description}
-                            </p>
+                            <h3 className="text-xl font-bold mb-3 italic text-white group-hover:text-[#a63d17] transition-colors uppercase tracking-tight">{title}</h3>
+                            <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
                         </div>
                     </div>
                 </div>
             );
         };
 
-        // --- Aplicación Principal ---
         const App = () => {
+            // Activos con Persistencia
+            useImagePersistence("https://i.ibb.co/m5LPqZfV/Screenshot-20260312-132436-Google-1-1.jpg", "main_bg", true);
             const heroBanner = useImagePersistence("https://i.ibb.co/wFQsXf73/Screenshot-20260308-201110-Google-1.jpg", "hero_banner");
             const logoMotul = useImagePersistence("https://i.ibb.co/5xCRPcnv/2560px-Motul-logo-svg.png", "logo_motul");
             const logoCastrol = useImagePersistence("https://i.ibb.co/KcLsvhRh/Screenshot-20250801-071235-Google.jpg", "logo_castrol");
@@ -151,17 +171,11 @@
             const signature = useImagePersistence("https://i.ibb.co/k7kn9Z9/Screenshot-20260308-201057-Google-1-1.jpg", "signature");
 
             return (
-                <div className="min-h-screen industrial-grid relative">
-                    {/* Banner Hero */}
+                <div className="min-h-screen relative">
                     <header className="w-full pt-0 pb-0 flex flex-col items-center">
                         <div className="w-full h-64 glass-card metal-border flex items-center justify-center relative overflow-hidden group border-x-0">
                             <div className="flex flex-col items-center z-10 gap-6 animate-fade-in">
-                                <img 
-                                    src={heroBanner} 
-                                    alt="Lubriluk Banner" 
-                                    className="h-44 md:h-56 object-contain rounded-xl shadow-lg border border-white/5"
-                                    referrerPolicy="no-referrer"
-                                />
+                                <img src={heroBanner} alt="Lubriluk Banner" className="h-44 md:h-56 object-contain rounded-xl shadow-lg border border-white/5" referrerPolicy="no-referrer" />
                                 <p className="font-semibold italic uppercase tracking-widest" style={{ color: '#a63d17', textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                                     Creciendo con experiencia
                                 </p>
@@ -170,7 +184,6 @@
                     </header>
 
                     <main className="max-w-7xl mx-auto px-6 py-12">
-                        {/* Marcas */}
                         <div className="flex flex-col items-center gap-10 mb-24 animate-fade-in">
                             <div className="flex flex-wrap justify-center gap-12 md:gap-20">
                                 <img src={logoMotul} alt="Motul" className="h-10 md:h-12 object-contain opacity-80 hover:opacity-100 transition-opacity" referrerPolicy="no-referrer" />
@@ -183,100 +196,43 @@
                             </div>
                         </div>
 
-                        {/* Cuadrícula de Categorías */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <CategoryCard 
-                                title="Lubricantes" 
-                                description="Aceites sintéticos, minerales y aditivos de marcas líderes." 
-                                image="https://i.ibb.co/FkrjTv6P/26946-1.webp" 
-                                storageKey="prod_lub" 
-                                delay={0.1} 
-                            />
-                            <CategoryCard 
-                                title="Cubiertas" 
-                                description="Cámaras, cubiertas y tacos de goma para motos." 
-                                image="https://i.ibb.co/d4rLdgLh/D-NQ-NP-979994-MLA84406763780-052025-O.png" 
-                                storageKey="prod_cub" 
-                                delay={0.2} 
-                                objectFit="contain" 
-                            />
-                            <CategoryCard 
-                                title="Repuestos" 
-                                description="Filtros, juegos de transmisión, baterías y pastillas de freno." 
-                                image="https://i.ibb.co/dwv55wm3/D-NQ-NP-838704-MLA73109317958-122023-O.png" 
-                                storageKey="prod_rep" 
-                                delay={0.3} 
-                                objectFit="contain" 
-                            />
-                            <CategoryCard 
-                                title="Estética" 
-                                description="Focos de exposición y pinos aromáticos de distintos tipos." 
-                                image="https://i.ibb.co/1tFBzCpJ/3452.png" 
-                                storageKey="prod_est" 
-                                delay={0.4} 
-                            />
+                            <CategoryCard title="Lubricantes" description="Aceites sintéticos, minerales y aditivos de marcas líderes." image="https://i.ibb.co/FkrjTv6P/26946-1.webp" storageKey="prod_lub" delay={0.1} />
+                            <CategoryCard title="Cubiertas" description="Cámaras, cubiertas y tacos de goma para motos." image="https://i.ibb.co/d4rLdgLh/D-NQ-NP-979994-MLA84406763780-052025-O.png" storageKey="prod_cub" delay={0.2} objectFit="contain" />
+                            <CategoryCard title="Repuestos" description="Filtros, juegos de transmisión, baterías y pastillas de freno." image="https://i.ibb.co/dwv55wm3/D-NQ-NP-838704-MLA73109317958-122023-O.png" storageKey="prod_rep" delay={0.3} objectFit="contain" />
+                            <CategoryCard title="Estética" description="Focos de exposición y pinos aromáticos de distintos tipos." image="https://i.ibb.co/1tFBzCpJ/3452.png" storageKey="prod_est" delay={0.4} />
                         </div>
 
-                        {/* Sección de Experiencia */}
                         <section className="mt-40 mb-20 flex flex-col items-center text-center animate-fade-in">
-                            <h2 className="text-3xl md:text-4xl font-semibold mb-8 italic" style={{ color: '#a63d17' }}>
-                                Experiencia que nos Respalda
-                            </h2>
+                            <h2 className="text-3xl md:text-4xl font-semibold mb-8 italic" style={{ color: '#a63d17' }}>Experiencia que nos Respalda</h2>
                             <p className="text-white text-lg md:text-xl leading-relaxed max-w-[800px] font-light">
                                 Lubriluk nace de la visión de sus fundadores, quienes sumamos años de trayectoria real en el rubro de los motores. Conocemos lo que vendemos porque lo vivimos desde adentro.
                             </p>
                         </section>
 
-                        {/* Contacto y Ubicación */}
                         <section className="mt-20 mb-32 flex flex-col items-center gap-8 px-4 animate-fade-in">
-                            <a 
-                                href="https://www.google.com/maps/search/?api=1&query=Crucero+Gral.+Belgrano+475,+Resistencia,+Chaco" 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="w-full max-w-2xl py-4 px-8 rounded-lg text-center font-medium text-white transition-all hover:brightness-90 shadow-lg" 
-                                style={{ backgroundColor: '#a63d17' }}
-                            >
+                            <a href="https://www.google.com/maps/search/?api=1&query=Crucero+Gral.+Belgrano+475,+Resistencia,+Chaco" target="_blank" rel="noopener noreferrer" className="w-full max-w-2xl py-4 px-8 rounded-lg text-center font-medium text-white transition-all hover:brightness-90 shadow-lg" style={{ backgroundColor: '#a63d17' }}>
                                 Nuestra Dirección: Crucero Gral. Belgrano 475, Resistencia
                             </a>
                             <div className="text-center text-white text-lg">
                                 También podés contactarnos por correo: {' '}
-                                <a href="mailto:contacto.lubriluk@gmail.com" className="font-bold hover:brightness-110" style={{ color: '#a63d17' }}>
-                                    contacto.lubriluk@gmail.com
-                                </a>
+                                <a href="mailto:contacto.lubriluk@gmail.com" className="font-bold hover:brightness-110" style={{ color: '#a63d17' }}>contacto.lubriluk@gmail.com</a>
                             </div>
                         </section>
                     </main>
 
-                    {/* Footer */}
                     <footer className="mt-32 py-16 px-6 border-t border-white/5 bg-black/40">
                         <div className="max-w-7xl mx-auto flex flex-col items-center text-center gap-10">
                             <img src={signature} alt="Lubriluk Signature" className="max-h-[50px] object-contain opacity-80" referrerPolicy="no-referrer" />
-                            <p className="text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">
-                                © 2026 LUBRILUK, TODOS LOS DERECHOS RESERVADOS
-                            </p>
+                            <p className="text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">© 2026 LUBRILUK, TODOS LOS DERECHOS RESERVADOS</p>
                             <p className="text-sm text-gray-400 font-light my-10">
                                 Este sitio web ha sido creado por un desarrollador independiente, si desea contactarlo haga {' '}
-                                <a 
-                                    href="https://wa.me/5493625208004?text=Hola,%20vi%20tu%20trabajo%20en%20la%20web%20de%20Lubriluk..." 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="font-bold transition-colors hover:brightness-125" 
-                                    style={{ color: '#a63d17' }}
-                                >
-                                    [clic aquí]
-                                </a>
+                                <a href="https://wa.me/5493625208004?text=Hola..." target="_blank" rel="noopener noreferrer" className="font-bold transition-colors hover:brightness-125" style={{ color: '#a63d17' }}>[clic aquí]</a>
                             </p>
                         </div>
                     </footer>
 
-                    {/* Botón Flotante WhatsApp */}
-                    <a 
-                        href="https://wa.me/5493624104432?text=Hola,%20vengo%20del%20sitio%20web%20oficial..." 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="fixed bottom-8 right-8 z-50 px-6 py-3 rounded-[30px] font-semibold text-white shadow-2xl transition-all hover:scale-105 active:scale-95" 
-                        style={{ backgroundColor: '#a63d17' }}
-                    >
+                    <a href="https://wa.me/5493624104432?text=Hola..." target="_blank" rel="noopener noreferrer" className="fixed bottom-8 right-8 z-50 px-6 py-3 rounded-[30px] font-semibold text-white shadow-2xl transition-all hover:scale-105 active:scale-95" style={{ backgroundColor: '#a63d17' }}>
                         Escribinos por WhatsApp
                     </a>
                 </div>
