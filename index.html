@@ -3,147 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lubriluk - Gran Lanzamiento</title>
-    <!-- Tailwind CSS para el diseño -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>Lubriluk - Creciendo con experiencia</title>
     
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'accent-orange': '#a63d17',
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #001f3f;
-            overflow-x: hidden;
+        /* Industrial/Metallic Grid Background */
+        .industrial-grid {
+            background-color: #050505;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
         }
-        .fade-in {
-            animation: fadeIn 1s ease-out forwards;
-            opacity: 0;
+
+        /* Glassmorphism & Metal Effects */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+
+        .metal-border {
+            border-top-color: rgba(255, 255, 255, 0.2);
+            border-left-color: rgba(255, 255, 255, 0.2);
+            border-bottom-color: rgba(0, 0, 0, 0.4);
+            border-right-color: rgba(0, 0, 0, 0.4);
+        }
+
+        /* Custom Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .delay-1 { animation-delay: 0.2s; }
-        .delay-2 { animation-delay: 0.4s; }
-        .delay-3 { animation-delay: 0.6s; }
+
+        .animate-fade-in {
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        body {
+            background-color: black;
+            color: white;
+            min-height: screen;
+            overflow-x: hidden;
+            padding-bottom: 150px;
+        }
     </style>
 </head>
-<body class="text-white selection:bg-orange-500/30">
+<body>
+    <div id="root"></div>
 
-    <!-- Elementos decorativos de fondo -->
-    <div class="fixed inset-0 pointer-events-none">
-        <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-orange-500/5 rounded-full blur-[120px]"></div>
-        <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-white/5 rounded-full blur-[120px]"></div>
-    </div>
+    <!-- React & Babel CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <div class="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative z-10">
-        
-        <main class="container mx-auto max-w-4xl text-center">
-            
-            <!-- Logo -->
-            <div class="fade-in mb-10">
-                <img src="https://i.ibb.co/6cB9jMwM/Screenshot-20250620-225631-Enhance-Fox-1.jpg" 
-                     alt="Lubriluk Logo" 
-                     class="w-32 md:w-48 mx-auto rounded-3xl shadow-2xl border border-white/10">
-            </div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-            <!-- Encabezado -->
-            <div class="fade-in delay-1 mb-8">
-                <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 text-[10px] md:text-xs font-bold tracking-widest uppercase text-orange-500 mb-6">
-                    <i data-lucide="timer" class="w-3 h-3"></i>
-                    Gran Lanzamiento Oficial
-                </span>
-                
-                <h1 class="text-4xl md:text-7xl font-black tracking-tighter mb-6 leading-tight uppercase">
-                    Lubriluk <br>
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">
-                        Nueva Experiencia
-                    </span>
-                </h1>
-                
-                <p class="text-gray-300 text-base md:text-lg max-w-xl mx-auto mb-10 font-medium leading-relaxed">
-                    Cuidamos tu motor en Resistencia. Estamos actualizando nuestra web para ofrecerte lo mejor.
-                </p>
-            </div>
+        // --- Hook de Persistencia de Imágenes ---
+        const useImagePersistence = (url, storageKey) => {
+            const [src, setSrc] = useState(url);
 
-            <!-- Contador -->
-            <div class="fade-in delay-2 grid grid-cols-4 gap-2 md:gap-6 mb-12 w-full max-w-3xl mx-auto">
-                <div class="bg-white/5 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-6 backdrop-blur-md">
-                    <div id="days" class="text-2xl md:text-5xl font-black mb-1 text-orange-500">00</div>
-                    <div class="text-[8px] md:text-[10px] uppercase tracking-widest text-gray-400 font-bold">Días</div>
+            useEffect(() => {
+                const loadPersistentImage = async () => {
+                    try {
+                        const cachedImage = localStorage.getItem(`lubriluk_img_${storageKey}`);
+                        if (cachedImage) {
+                            setSrc(cachedImage);
+                            return;
+                        }
+
+                        const response = await fetch(url);
+                        const blob = await response.blob();
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64String = reader.result;
+                            try {
+                                localStorage.setItem(`lubriluk_img_${storageKey}`, base64String);
+                            } catch (e) {
+                                console.warn(`LocalStorage lleno para ${storageKey}`);
+                            }
+                            setSrc(base64String);
+                        };
+                        reader.readAsDataURL(blob);
+                    } catch (error) {
+                        setSrc(url);
+                    }
+                };
+                loadPersistentImage();
+            }, [url, storageKey]);
+
+            return src;
+        };
+
+        // --- Componente de Tarjeta de Categoría ---
+        const CategoryCard = ({ title, description, image, storageKey, delay, objectFit = 'cover' }) => {
+            const persistentImage = useImagePersistence(image, storageKey);
+
+            return (
+                <div 
+                    className="group relative animate-fade-in opacity-0" 
+                    style={{ animationDelay: `${delay}s`, animationFillMode: 'forwards' }}
+                >
+                    <div className="glass-card metal-border rounded-xl p-6 h-full flex flex-col overflow-hidden transition-all duration-500 hover:border-white/30">
+                        <div className="mb-6 overflow-hidden rounded-[8px] bg-black/40 flex items-center justify-center shadow-lg">
+                            <img 
+                                src={persistentImage} 
+                                alt={title} 
+                                className={`w-full h-48 ${objectFit === 'contain' ? 'object-contain p-2' : 'object-cover'} transition-transform duration-500 group-hover:scale-110`}
+                                referrerPolicy="no-referrer"
+                            />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold mb-3 italic text-white group-hover:text-[#a63d17] transition-colors uppercase tracking-tight">
+                                {title}
+                            </h3>
+                            <p className="text-gray-400 text-sm leading-relaxed">
+                                {description}
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <div class="bg-white/5 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-6 backdrop-blur-md">
-                    <div id="hours" class="text-2xl md:text-5xl font-black mb-1 text-orange-500">00</div>
-                    <div class="text-[8px] md:text-[10px] uppercase tracking-widest text-gray-400 font-bold">Horas</div>
-                </div>
-                <div class="bg-white/5 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-6 backdrop-blur-md">
-                    <div id="minutes" class="text-2xl md:text-5xl font-black mb-1 text-orange-500">00</div>
-                    <div class="text-[8px] md:text-[10px] uppercase tracking-widest text-gray-400 font-bold">Minutos</div>
-                </div>
-                <div class="bg-white/5 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-6 backdrop-blur-md">
-                    <div id="seconds" class="text-2xl md:text-5xl font-black mb-1 text-orange-500">00</div>
-                    <div class="text-[8px] md:text-[10px] uppercase tracking-widest text-gray-400 font-bold">Segundos</div>
-                </div>
-            </div>
+            );
+        };
 
-            <!-- Acciones -->
-            <div class="fade-in delay-3 flex flex-col items-center gap-8 w-full max-w-md mx-auto">
-                <div class="flex items-center gap-3 text-white bg-white/5 px-6 py-3 rounded-full border border-white/10 backdrop-blur-sm">
-                    <i data-lucide="calendar" class="w-5 h-5 text-orange-500"></i>
-                    <span class="font-bold text-sm">Lunes 16 de Marzo, 2026</span>
-                </div>
+        // --- Aplicación Principal ---
+        const App = () => {
+            const heroBanner = useImagePersistence("https://i.ibb.co/wFQsXf73/Screenshot-20260308-201110-Google-1.jpg", "hero_banner");
+            const logoMotul = useImagePersistence("https://i.ibb.co/5xCRPcnv/2560px-Motul-logo-svg.png", "logo_motul");
+            const logoCastrol = useImagePersistence("https://i.ibb.co/KcLsvhRh/Screenshot-20250801-071235-Google.jpg", "logo_castrol");
+            const logoGulf = useImagePersistence("https://i.ibb.co/fVjxPvbp/Gulf-logo.png", "logo_gulf");
+            const logoShell = useImagePersistence("https://i.ibb.co/pBJKXtmS/Logo-Shell-1.png", "logo_shell");
+            const logoAma = useImagePersistence("https://i.ibb.co/Q76j2Dxb/9301ff-e57d15a2800247daba8a7386f553e994-mv2.jpg", "logo_ama");
+            const signature = useImagePersistence("https://i.ibb.co/k7kn9Z9/Screenshot-20260308-201057-Google-1-1.jpg", "signature");
 
-                <div class="flex flex-col w-full gap-4">
-                    <a href="https://wa.me/5493624104432" 
-                       target="_blank"
-                       class="flex items-center justify-center gap-3 w-full bg-[#25D366] text-white px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 hover:bg-[#20ba5a]">
-                        <i data-lucide="message-circle" class="w-5 h-5"></i>
-                        Consultas por WhatsApp
+            return (
+                <div className="min-h-screen industrial-grid relative">
+                    {/* Banner Hero */}
+                    <header className="w-full pt-0 pb-0 flex flex-col items-center">
+                        <div className="w-full h-64 glass-card metal-border flex items-center justify-center relative overflow-hidden group border-x-0">
+                            <div className="flex flex-col items-center z-10 gap-6 animate-fade-in">
+                                <img 
+                                    src={heroBanner} 
+                                    alt="Lubriluk Banner" 
+                                    className="h-44 md:h-56 object-contain rounded-xl shadow-lg border border-white/5"
+                                    referrerPolicy="no-referrer"
+                                />
+                                <p className="font-semibold italic uppercase tracking-widest" style={{ color: '#a63d17', textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+                                    Creciendo con experiencia
+                                </p>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-7xl mx-auto px-6 py-12">
+                        {/* Marcas */}
+                        <div className="flex flex-col items-center gap-10 mb-24 animate-fade-in">
+                            <div className="flex flex-wrap justify-center gap-12 md:gap-20">
+                                <img src={logoMotul} alt="Motul" className="h-10 md:h-12 object-contain opacity-80 hover:opacity-100 transition-opacity" referrerPolicy="no-referrer" />
+                                <img src={logoCastrol} alt="Castrol" className="h-10 md:h-12 object-contain opacity-80 hover:opacity-100 transition-opacity" referrerPolicy="no-referrer" />
+                                <img src={logoGulf} alt="Gulf" className="h-10 md:h-12 object-contain opacity-80 hover:opacity-100 transition-opacity" referrerPolicy="no-referrer" />
+                            </div>
+                            <div className="flex flex-wrap justify-center gap-12 md:gap-20">
+                                <img src={logoShell} alt="Shell" className="h-10 md:h-12 object-contain opacity-80 hover:opacity-100 transition-opacity" referrerPolicy="no-referrer" />
+                                <img src={logoAma} alt="AMA" className="h-10 md:h-12 object-contain opacity-80 hover:opacity-100 transition-opacity" referrerPolicy="no-referrer" />
+                            </div>
+                        </div>
+
+                        {/* Cuadrícula de Categorías */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <CategoryCard 
+                                title="Lubricantes" 
+                                description="Aceites sintéticos, minerales y aditivos de marcas líderes." 
+                                image="https://i.ibb.co/FkrjTv6P/26946-1.webp" 
+                                storageKey="prod_lub" 
+                                delay={0.1} 
+                            />
+                            <CategoryCard 
+                                title="Cubiertas" 
+                                description="Cámaras, cubiertas y tacos de goma para motos." 
+                                image="https://i.ibb.co/d4rLdgLh/D-NQ-NP-979994-MLA84406763780-052025-O.png" 
+                                storageKey="prod_cub" 
+                                delay={0.2} 
+                                objectFit="contain" 
+                            />
+                            <CategoryCard 
+                                title="Repuestos" 
+                                description="Filtros, juegos de transmisión, baterías y pastillas de freno." 
+                                image="https://i.ibb.co/dwv55wm3/D-NQ-NP-838704-MLA73109317958-122023-O.png" 
+                                storageKey="prod_rep" 
+                                delay={0.3} 
+                                objectFit="contain" 
+                            />
+                            <CategoryCard 
+                                title="Estética" 
+                                description="Focos de exposición y pinos aromáticos de distintos tipos." 
+                                image="https://i.ibb.co/1tFBzCpJ/3452.png" 
+                                storageKey="prod_est" 
+                                delay={0.4} 
+                            />
+                        </div>
+
+                        {/* Sección de Experiencia */}
+                        <section className="mt-40 mb-20 flex flex-col items-center text-center animate-fade-in">
+                            <h2 className="text-3xl md:text-4xl font-semibold mb-8 italic" style={{ color: '#a63d17' }}>
+                                Experiencia que nos Respalda
+                            </h2>
+                            <p className="text-white text-lg md:text-xl leading-relaxed max-w-[800px] font-light">
+                                Lubriluk nace de la visión de sus fundadores, quienes sumamos años de trayectoria real en el rubro de los motores. Conocemos lo que vendemos porque lo vivimos desde adentro.
+                            </p>
+                        </section>
+
+                        {/* Contacto y Ubicación */}
+                        <section className="mt-20 mb-32 flex flex-col items-center gap-8 px-4 animate-fade-in">
+                            <a 
+                                href="https://www.google.com/maps/search/?api=1&query=Crucero+Gral.+Belgrano+475,+Resistencia,+Chaco" 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="w-full max-w-2xl py-4 px-8 rounded-lg text-center font-medium text-white transition-all hover:brightness-90 shadow-lg" 
+                                style={{ backgroundColor: '#a63d17' }}
+                            >
+                                Nuestra Dirección: Crucero Gral. Belgrano 475, Resistencia
+                            </a>
+                            <div className="text-center text-white text-lg">
+                                También podés contactarnos por correo: {' '}
+                                <a href="mailto:contacto.lubriluk@gmail.com" className="font-bold hover:brightness-110" style={{ color: '#a63d17' }}>
+                                    contacto.lubriluk@gmail.com
+                                </a>
+                            </div>
+                        </section>
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="mt-32 py-16 px-6 border-t border-white/5 bg-black/40">
+                        <div className="max-w-7xl mx-auto flex flex-col items-center text-center gap-10">
+                            <img src={signature} alt="Lubriluk Signature" className="max-h-[50px] object-contain opacity-80" referrerPolicy="no-referrer" />
+                            <p className="text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">
+                                © 2026 LUBRILUK, TODOS LOS DERECHOS RESERVADOS
+                            </p>
+                            <p className="text-sm text-gray-400 font-light my-10">
+                                Este sitio web ha sido creado por un desarrollador independiente, si desea contactarlo haga {' '}
+                                <a 
+                                    href="https://wa.me/5493625208004?text=Hola,%20vi%20tu%20trabajo%20en%20la%20web%20de%20Lubriluk..." 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="font-bold transition-colors hover:brightness-125" 
+                                    style={{ color: '#a63d17' }}
+                                >
+                                    [clic aquí]
+                                </a>
+                            </p>
+                        </div>
+                    </footer>
+
+                    {/* Botón Flotante WhatsApp */}
+                    <a 
+                        href="https://wa.me/5493624104432?text=Hola,%20vengo%20del%20sitio%20web%20oficial..." 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="fixed bottom-8 right-8 z-50 px-6 py-3 rounded-[30px] font-semibold text-white shadow-2xl transition-all hover:scale-105 active:scale-95" 
+                        style={{ backgroundColor: '#a63d17' }}
+                    >
+                        Escribinos por WhatsApp
                     </a>
-                    
-                    <a href="https://maps.app.goo.gl/MESwyLbpb9AJk2hPA?g_st=ac" 
-                       target="_blank"
-                       class="flex items-center justify-center gap-2 text-orange-500 font-black text-xs uppercase tracking-widest hover:text-orange-400 transition-colors group">
-                        <i data-lucide="map-pin" class="w-4 h-4"></i>
-                        Ver ubicación en Google Maps
-                    </a>
                 </div>
-            </div>
-        </main>
+            );
+        };
 
-        <footer class="mt-12 text-gray-500 text-[10px] tracking-[0.2em] uppercase font-bold">
-            &copy; 2026 Lubriluk &bull; Resistencia, Chaco
-        </footer>
-    </div>
-
-    <script>
-        // Inicializar iconos
-        lucide.createIcons();
-
-        // Lógica del contador
-        const launchDate = new Date("March 16, 2026 00:00:00").getTime();
-
-        const timer = setInterval(function() {
-            const now = new Date().getTime();
-            const distance = launchDate - now;
-
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            document.getElementById("days").innerHTML = String(days).padStart(2, '0');
-            document.getElementById("hours").innerHTML = String(hours).padStart(2, '0');
-            document.getElementById("minutes").innerHTML = String(minutes).padStart(2, '0');
-            document.getElementById("seconds").innerHTML = String(seconds).padStart(2, '0');
-
-            if (distance < 0) {
-                clearInterval(timer);
-                document.querySelector(".grid").innerHTML = "<div class='col-span-4 text-2xl font-bold uppercase tracking-widest text-orange-500'>¡Ya estamos en línea!</div>";
-            }
-        }, 1000);
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
